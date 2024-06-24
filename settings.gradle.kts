@@ -16,3 +16,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "nfk"
 include(":library")
+include(":sample:composeApp")
+
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
