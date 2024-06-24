@@ -23,17 +23,7 @@ public sealed class NdefRecord(
 ) {
 
     public companion object {
-        public fun from(
-            tnf: Short,
-            type: ByteArray,
-            id: ByteArray,
-            payload: ByteArray,
-        ): NdefRecord {
-            TODO("IMPLEMENT")
-        }
-
         public fun parse(byteArray: ByteArray): List<NdefRecord> {
-            // TODO look at androids NdefRecord.parse which returns a List<Record>
             val records = mutableListOf<NdefRecord>()
             var index = 0
 
@@ -109,42 +99,53 @@ public sealed class NdefRecord(
                 inChunk = cf
                 if (inChunk) continue
 
-                val record: NdefRecord = when (Tnf.entries.first { it.value == tnf }) {
-                    Tnf.Empty -> Empty
-                    Tnf.WellKnown -> {
-                        when (Rtd.entries.first { it.value.contentEquals(type) }) {
-                            Rtd.Text -> WellKnown.Text.from(id, payload)
-                            Rtd.Uri -> WellKnown.Uri(payload.decodeToString())
-                            Rtd.SmartPoster -> WellKnown.SmartPoster.from(id, payload)
-                            Rtd.AltCarrier -> WellKnown.AlternativeCarrier.from(id, payload)
-                            Rtd.HandoverCarrier -> WellKnown.HandoverCarrier.from(id, payload)
-                            Rtd.HandoverRequest -> WellKnown.HandoverRequest.from(id, payload)
-                            Rtd.HandoverSelect -> WellKnown.HandoverSelect.from(id, payload)
-                            Rtd.CollisionResolution -> WellKnown.CollisionResolution(
-                                id,
-                                payload.getNumber(0, Short.SIZE_BYTES).toShort()
-                            )
-
-                            Rtd.Error -> WellKnown.Error.from(id, payload)
-                        }
-                    }
-
-                    Tnf.Mime -> Mime(id, type.toString(), payload)
-                    Tnf.Uri -> Uri(id, payload.decodeToString())
-                    Tnf.Ext -> {
-                        val (domain, extType) = type.decodeToString().split(":")
-                        External(domain, extType, payload)
-                    }
-
-                    Tnf.Unknown -> Unknown(id, payload)
-                    Tnf.Unchanged -> throw IllegalStateException("How did we get to an Unchanged full chunk?")
-                    Tnf.Reserved -> throw IllegalStateException("this tnf is reserved, we shouldn't create a record with this tnf")
-                }
+                val record = from(tnf, type, id, payload)
 
                 records.add(record)
             } while (!me)
 
             return records
+        }
+
+        public fun from(
+            tnf: Short,
+            type: ByteArray,
+            id: ByteArray,
+            payload: ByteArray,
+        ): NdefRecord {
+            // TODO add checks to make sure Records are setup properly
+            // TODO can we receive Unchanged records here?
+            return when (Tnf.getByValue(tnf)) {
+                Tnf.Empty -> Empty
+                Tnf.WellKnown -> {
+                    when (Rtd.entries.first { it.value.contentEquals(type) }) {
+                        Rtd.Text -> WellKnown.Text.from(id, payload)
+                        Rtd.Uri -> WellKnown.Uri(payload.decodeToString())
+                        Rtd.SmartPoster -> WellKnown.SmartPoster.from(id, payload)
+                        Rtd.AltCarrier -> WellKnown.AlternativeCarrier.from(id, payload)
+                        Rtd.HandoverCarrier -> WellKnown.HandoverCarrier.from(id, payload)
+                        Rtd.HandoverRequest -> WellKnown.HandoverRequest.from(id, payload)
+                        Rtd.HandoverSelect -> WellKnown.HandoverSelect.from(id, payload)
+                        Rtd.CollisionResolution -> WellKnown.CollisionResolution(
+                            id,
+                            payload.getNumber(0, Short.SIZE_BYTES).toShort()
+                        )
+
+                        Rtd.Error -> WellKnown.Error.from(id, payload)
+                    }
+                }
+
+                Tnf.Mime -> Mime(id, type.toString(), payload)
+                Tnf.Uri -> Uri(id, payload.decodeToString())
+                Tnf.Ext -> {
+                    val (domain, extType) = type.decodeToString().split(":")
+                    External(domain, extType, payload)
+                }
+
+                Tnf.Unknown -> Unknown(id, payload)
+                Tnf.Unchanged -> throw IllegalStateException("How did we get to an Unchanged full chunk?")
+                Tnf.Reserved -> throw IllegalStateException("this tnf is reserved, we shouldn't create a record with this tnf")
+            }
         }
 
         // MessageBegin
