@@ -1,7 +1,5 @@
 package utils
 
-import kotlin.experimental.and
-
 /**
  * This works for numbers with no decimals e.g. Short, Int, Long. For Short and Int turn them into
  * Long and call this function.
@@ -28,10 +26,20 @@ internal fun ByteArray.getNumber(startPos: Int, byteSize: Int): Long {
     require(byteSize in 1..8)
     var result = 0L
     for (index in 0 until byteSize) {
-        val newByte = if (index == 0) get(startPos + index).toInt() else get(startPos + index).toInt() and 0xFF
+        val newByte =
+            if (index == 0) get(startPos + index).toInt() else get(startPos + index).toInt() and 0xFF
         result = result shl 8 + newByte
     }
     return result
 }
 
 internal fun emptyByteArray(): ByteArray = byteArrayOf()
+
+@OptIn(ExperimentalStdlibApi::class)
+public fun ByteArray.displayAsHex(): String {
+    return this.toHexString(HexFormat.UpperCase)
+        .toCharArray()
+        .asIterable()
+        .windowed(2, 2, false)
+        .joinToString(":") { "0x${it.component1()}${it.component2()}" }
+}

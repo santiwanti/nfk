@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import utils.displayAsHex
 
 @Composable
 @Preview
@@ -21,6 +22,7 @@ fun App() {
     }
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 @Composable
 private fun SampleApp() {
     val mainViewModel = remember { MainViewModel() }
@@ -40,6 +42,12 @@ private fun SampleApp() {
         mainViewModel.readTag.collectAsState().value?.let { nfcCard ->
             when (nfcCard) {
                 is NfcCard.Ndef -> Text(nfcCard.message.records.joinToString(separator = "\n") { "${it.id}\t ${it.tnf}\t ${it.type}\t ${it.payload}" })
+                is NfcCard.NfcA -> Text("id: ${nfcCard.id.displayAsHex()}\natqa: ${nfcCard.atqa.displayAsHex()}\nsak: ${nfcCard.sak.displayAsHex()}")
+                is NfcCard.NfcB -> Text("id: ${nfcCard.id.displayAsHex()}\nApp Data: ${nfcCard.appData.displayAsHex()}\nprotocol info: ${nfcCard.protocolInfo.displayAsHex()}")
+                is NfcCard.NfcF -> Text("id: ${nfcCard.id.displayAsHex()}\nsystemCode: ${nfcCard.systemCode.displayAsHex()}\nmanufacturer: ${nfcCard.manufacturer.displayAsHex()}")
+                is NfcCard.NfcV -> Text("id: ${nfcCard.id.displayAsHex()}\ndsfId: ${nfcCard.dsfId.displayAsHex()}\nResponseFlags: ${nfcCard.responseFlags.displayAsHex()}")
+                is NfcCard.IsoDep.A -> Text("id: ${nfcCard.id.displayAsHex()}\nhistoricalBtyes: ${nfcCard.historicalBytes.displayAsHex()}\natqa: ${nfcCard.atqa.displayAsHex()}\nsak: ${nfcCard.sak}")
+                is NfcCard.IsoDep.B -> Text("id: ${nfcCard.id.displayAsHex()}\nHiLayerResponse: ${nfcCard.hiLayerResponse.displayAsHex()}\nApp Data: ${nfcCard.appData.displayAsHex()}\nprotocol info: ${nfcCard.protocolInfo.displayAsHex()}")
                 else -> throw IllegalStateException("tag can't be a random type")
             }
         }

@@ -8,3 +8,8 @@ package utils
 internal fun Byte.toPositiveInt(): Int {
     return this.toInt() and 0xFF
 }
+
+@OptIn(ExperimentalStdlibApi::class)
+public fun Byte.displayAsHex(): String {
+    return "0x${this.toHexString(HexFormat.UpperCase)}"
+}

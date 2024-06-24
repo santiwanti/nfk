@@ -23,5 +23,6 @@ Kotlin Multiplatform library for NFC communication.
 | Write Tags |         |     |
 
 ✓: Supported
+
 ✓✓: Supported in background
 
