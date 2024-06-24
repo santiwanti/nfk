@@ -23,6 +23,15 @@ public sealed class NdefRecord(
 ) {
 
     public companion object {
+        public fun from(
+            tnf: Short,
+            type: ByteArray,
+            id: ByteArray,
+            payload: ByteArray,
+        ): NdefRecord {
+            TODO("IMPLEMENT")
+        }
+
         public fun parse(byteArray: ByteArray): List<NdefRecord> {
             // TODO look at androids NdefRecord.parse which returns a List<Record>
             val records = mutableListOf<NdefRecord>()
