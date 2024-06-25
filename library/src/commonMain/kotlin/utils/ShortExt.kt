@@ -6,5 +6,5 @@ public fun Short.displayAsHex(): String {
         .toCharArray()
         .asIterable()
         .windowed(2, 2, false)
-        .joinToString(":") { "0x${it.component1()}${it.component2()}" }
+        .joinToString(separator = ":", prefix = "0x") { "${it.component1()}${it.component2()}" }
 }

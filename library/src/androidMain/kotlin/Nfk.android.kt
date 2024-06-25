@@ -3,9 +3,13 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.tech.IsoDep
+import android.nfc.tech.MifareClassic
+import android.nfc.tech.MifareUltralight
 import android.nfc.tech.Ndef
+import android.nfc.tech.NdefFormatable
 import android.nfc.tech.NfcA
 import android.nfc.tech.NfcB
+import android.nfc.tech.NfcBarcode
 import android.nfc.tech.NfcF
 import android.nfc.tech.NfcV
 import android.os.Bundle
@@ -46,10 +50,15 @@ public actual class Nfk(activity: Activity) {
                             NfcTag.NfcF -> NfcCard.NfcF(NfcF.get(tag))
                             NfcTag.NfcV -> NfcCard.NfcV(NfcV.get(tag))
                             NfcTag.IsoDep -> NfcCard.IsoDep.from(IsoDep.get(tag))
-                            NfcTag.MifareClassic -> TODO() // MifareClassic.get(tag)
-                            NfcTag.MifareUltralight -> TODO()
-                            NfcTag.NfcBarcode -> TODO()
-                            NfcTag.NdefFormatable -> TODO()
+                            NfcTag.MifareClassic -> NfcCard.MifareClassic(MifareClassic.get(tag))
+                            NfcTag.MifareUltralight -> NfcCard.MifareUltralight(
+                                MifareUltralight.get(
+                                    tag
+                                )
+                            )
+
+                            NfcTag.NfcBarcode -> NfcCard.NfcBarcode.from(NfcBarcode.get(tag))
+                            NfcTag.NdefFormatable -> NfcCard.NdefFormatable(NdefFormatable.get(tag))
                         }
                         nfcAdapter.disableReaderMode(requiredContext)
                         cont.resume(card)
@@ -97,28 +106,32 @@ public actual class Nfk(activity: Activity) {
         }
     }
 
+    // Note the order of this enum and the list are important. They must have the same order and
+    //  IsoDep and Mifares have to be at the top because they have other techs like nfcA, so if
+    //  nfcA is first it will be considered nfcA instead of the correct one. NdefFormatable must
+    //  always be last
     private enum class NfcTag {
         IsoDep,
+        MifareClassic,
+        MifareUltralight,
         NfcA,
         NfcB,
         NfcF,
         NfcV,
         Ndef,
-        MifareClassic,
-        MifareUltralight,
         NfcBarcode,
         NdefFormatable;
 
         companion object {
             private val techList = listOf(
                 android.nfc.tech.IsoDep::class.qualifiedName!!,
+                android.nfc.tech.MifareClassic::class.qualifiedName!!,
+                android.nfc.tech.MifareUltralight::class.qualifiedName!!,
                 android.nfc.tech.NfcA::class.qualifiedName!!,
                 android.nfc.tech.NfcB::class.qualifiedName!!,
                 android.nfc.tech.NfcF::class.qualifiedName!!,
                 android.nfc.tech.NfcV::class.qualifiedName!!,
                 android.nfc.tech.Ndef::class.qualifiedName!!,
-                android.nfc.tech.MifareClassic::class.qualifiedName!!,
-                android.nfc.tech.MifareUltralight::class.qualifiedName!!,
                 android.nfc.tech.NfcBarcode::class.qualifiedName!!,
                 android.nfc.tech.NdefFormatable::class.qualifiedName!!,
             )
