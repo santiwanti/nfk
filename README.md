@@ -15,6 +15,14 @@ Kotlin Multiplatform library for NFC communication.
   at [the documentation](https://developer.android.com/develop/connectivity/nfc/nfc#filter-intents)
   for more information.
 
+### iOS Setup
+
+The steps are detailed in [the docs](https://developer.apple.com/documentation/corenfc/building_an_nfc_tag-reader_app#3240401):
+- [ ] Turn on Near Field Communication Tag Reading which will: 
+  - [ ] Add the NFC tag-reading feature to the App ID.
+  - [ ] Add the Near Field Communication Tag Reader Session Formats Entitlement.
+- [ ] Add the NFCReaderUsageDescription to `Info.plist`
+
 ## Supported Features
 
 |  Feature   | Android | iOS |

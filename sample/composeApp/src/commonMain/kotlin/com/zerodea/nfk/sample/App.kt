@@ -22,7 +22,6 @@ fun App() {
     }
 }
 
-@OptIn(ExperimentalStdlibApi::class)
 @Composable
 private fun SampleApp() {
     val mainViewModel = remember { MainViewModel() }

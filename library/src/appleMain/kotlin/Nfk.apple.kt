@@ -6,6 +6,13 @@ import platform.CoreNFC.NFCNDEFMessage
 import platform.CoreNFC.NFCNDEFPayload
 import platform.CoreNFC.NFCNDEFReaderSession
 import platform.CoreNFC.NFCNDEFReaderSessionDelegateProtocol
+import platform.CoreNFC.NFCPollingISO14443
+import platform.CoreNFC.NFCPollingISO15693
+import platform.CoreNFC.NFCPollingISO18092
+import platform.CoreNFC.NFCReaderSessionInvalidationErrorFirstNDEFTagRead
+import platform.CoreNFC.NFCTagProtocol
+import platform.CoreNFC.NFCTagReaderSession
+import platform.CoreNFC.NFCTagReaderSessionDelegateProtocol
 import platform.Foundation.NSError
 import platform.darwin.NSObject
 import utils.toByteArray
@@ -38,31 +45,66 @@ public actual class Nfk {
      */
     public actual suspend fun read(timeout: Long?): NfcCard? = withContext(Dispatchers.IO) {
         suspendCancellableCoroutine { cont ->
-            NFCNDEFReaderSession(object : NSObject(), NFCNDEFReaderSessionDelegateProtocol {
-                override fun readerSession(session: NFCNDEFReaderSession, didDetectNDEFs: List<*>) {
-                    val message = didDetectNDEFs.firstOrNull() as? NFCNDEFMessage
-                    val records = (message?.records as List<NFCNDEFPayload>).map {
-                        NdefRecord.from(
-                            it.typeNameFormat.toShort() and 0x0F,
-                            it.type.toByteArray(),
-                            it.identifier.toByteArray(),
-                            it.payload.toByteArray(),
-                        )
+            val tagSession = NFCTagReaderSession(
+                NFCPollingISO14443 and NFCPollingISO15693 and NFCPollingISO18092,
+                object : NSObject(), NFCTagReaderSessionDelegateProtocol {
+                    override fun tagReaderSession(
+                        session: NFCTagReaderSession,
+                        didInvalidateWithError: NSError
+                    ) {
+                        println("invalidated with error code: ${didInvalidateWithError.code}")
                     }
 
-                    cont.resume(NfcCard.Ndef(NdefMessage(records)))
-                }
+                    override fun tagReaderSession(
+                        session: NFCTagReaderSession,
+                        didDetectTags: List<*>
+                    ) {
+                        val tag = didDetectTags.firstOrNull() as? NFCTagProtocol
+                            ?: throw IllegalArgumentException("couldn't find tag")
+                        println("tag type: ${tag.type}")
+                    }
 
-                override fun readerSessionDidBecomeActive(session: NFCNDEFReaderSession) {
-                }
+                    override fun tagReaderSessionDidBecomeActive(session: NFCTagReaderSession) {
+                        println("tag session is active")
+                    }
+                },
+                null
+            )
+            tagSession.beginSession()
 
-                override fun readerSession(
-                    session: NFCNDEFReaderSession,
-                    didInvalidateWithError: NSError
-                ) {
-                    cont.resumeWithException(IllegalStateException(didInvalidateWithError.description))
-                }
-            }, null, true)
+//            val ndefSession =
+//                NFCNDEFReaderSession(object : NSObject(), NFCNDEFReaderSessionDelegateProtocol {
+//                    override fun readerSession(
+//                        session: NFCNDEFReaderSession,
+//                        didDetectNDEFs: List<*>
+//                    ) {
+//                        val message = didDetectNDEFs.firstOrNull() as? NFCNDEFMessage
+//                        val records = (message?.records as List<NFCNDEFPayload>).map {
+//                            NdefRecord.from(
+//                                it.typeNameFormat.toShort() and 0x0F,
+//                                it.type.toByteArray(),
+//                                it.identifier.toByteArray(),
+//                                it.payload.toByteArray(),
+//                            )
+//                        }
+//
+//                        cont.resume(NfcCard.Ndef(NdefMessage(records)))
+//                    }
+//
+//                    override fun readerSessionDidBecomeActive(session: NFCNDEFReaderSession) {
+//                    }
+//
+//                    override fun readerSession(
+//                        session: NFCNDEFReaderSession,
+//                        didInvalidateWithError: NSError
+//                    ) {
+//                        // Only throw error if it's not because we invalidating after reading an element
+//                        if (didInvalidateWithError.code != NFCReaderSessionInvalidationErrorFirstNDEFTagRead) cont.resumeWithException(
+//                            IllegalStateException(didInvalidateWithError.description)
+//                        )
+//                    }
+//                }, null, true)
+//            ndefSession.beginSession()
         }
     }
 
