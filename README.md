@@ -1,5 +1,9 @@
 # NFK
 
+## Note
+
+Don't use this library yet. This is still pre-alpha and the final API hasn't been define yet.
+
 ## What is it?
 
 Kotlin Multiplatform library for NFC communication.
