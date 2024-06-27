@@ -8,7 +8,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Nfk.init(this)
+        NfcDetectorFactory.init(this)
 
         setContent {
             App()

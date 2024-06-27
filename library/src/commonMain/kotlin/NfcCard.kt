@@ -1,5 +1,3 @@
-import utils.EnumWithValue
-
 public expect sealed class NfcCard {
     public class Ndef : NfcCard {
         public val id: ByteArray
@@ -81,7 +79,6 @@ public expect sealed class NfcCard {
             MINI, _1K, _2K, _4K;
 
             public val size: Int
-
         }
     }
 
@@ -119,7 +116,7 @@ public expect sealed class NfcCard {
                 public val barcode: ByteArray
             }
 
-            public class NotSetup: Kovio {
+            public class NotSetup : Kovio {
                 public val barcode: ByteArray
             }
         }

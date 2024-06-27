@@ -1,5 +1,6 @@
-public expect class Nfk {
+import kotlin.reflect.KClass
 
+public interface NfcDetector {
     /**
      *
      * @return true if enabled, false otherwise
@@ -16,12 +17,14 @@ public expect class Nfk {
     /**
      * Attempts to read a single tag.
      *
+     * @param cardTypesToDetect which card types we are looking for. If the detected tag is not of one
+     * of the listed types the function will throw an `IllegalStateException`. if this parameter is
+     * null it is equivalent to a list with all possible `NfcCard` types.
      * @param timeout milliseconds to wait before cancelling. If `null` it will wait indefinitely.
      * @return the `NfcCard` that was read or `null`.
      */
-    public suspend fun read(timeout: Long? = null): NfcCard?
-
-    public companion object {
-        public fun getInstance(): Nfk
-    }
+    public suspend fun <T : NfcCard> detect(
+        cardTypesToDetect: List<KClass<T>>?,
+        timeout: Long? = null,
+    ): NfcCard?
 }

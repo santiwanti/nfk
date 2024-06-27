@@ -26,6 +26,14 @@ kotlin {
                 implementation(libs.kotlinx.coroutines)
             }
         }
+
+        val androidMain by getting {
+            dependencies {
+                implementation(libs.androidx.lifecycle.common)
+                implementation(libs.androidx.activity)
+            }
+        }
+
         val commonTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)

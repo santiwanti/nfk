@@ -13,6 +13,9 @@ import android.nfc.tech.NfcBarcode
 import android.nfc.tech.NfcF
 import android.nfc.tech.NfcV
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -20,21 +23,33 @@ import kotlinx.coroutines.withTimeout
 import utils.openNfcSettings
 import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.reflect.KClass
 
-public actual class Nfk(activity: Activity) {
+public actual class NfcDetectorFactory(activity: ComponentActivity) : NfcDetector,
+    DefaultLifecycleObserver {
     private val context: WeakReference<Activity> = WeakReference(activity)
     private val requiredContext: Activity
         get() = context.get()
             ?: throw IllegalStateException("the activity used to initialize Nfk has been garbage collected")
     private val nfcAdapter: NfcAdapter = NfcAdapter.getDefaultAdapter(activity)
 
-    public actual fun isEnabled(): Boolean = nfcAdapter.isEnabled
+    private var isReading = false
 
-    public actual suspend fun enable() {
+    init {
+        activity.lifecycle.addObserver(this)
+    }
+
+    public override fun isEnabled(): Boolean = nfcAdapter.isEnabled
+
+    public override suspend fun enable() {
         requiredContext.openNfcSettings()
     }
 
-    public actual suspend fun read(timeout: Long?): NfcCard? = withContext(Dispatchers.IO) {
+    public override suspend fun <T : NfcCard> detect(
+        cardTypesToDetect: List<KClass<T>>?,
+        timeout: Long?,
+    ): NfcCard? = withContext(Dispatchers.IO) {
         withTimeout(timeout ?: Long.MAX_VALUE) {
             suspendCancellableCoroutine { cont ->
                 nfcAdapter.enableReaderMode(
@@ -60,8 +75,11 @@ public actual class Nfk(activity: Activity) {
                             NfcTag.NfcBarcode -> NfcCard.NfcBarcode.from(NfcBarcode.get(tag))
                             NfcTag.NdefFormatable -> NfcCard.NdefFormatable(NdefFormatable.get(tag))
                         }
-                        nfcAdapter.disableReaderMode(requiredContext)
-                        cont.resume(card)
+                        if (cardTypesToDetect?.any { it == nfcTag::class } != false) {
+                            cont.resume(card)
+                        } else {
+                            cont.resumeWithException(throw IllegalStateException("detected a card of type ${nfcTag.javaClass}, but didn't expect it"))
+                        }
                     },
                     NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_NFC_B or NfcAdapter.FLAG_READER_NFC_F or NfcAdapter.FLAG_READER_NFC_V or NfcAdapter.FLAG_READER_NFC_BARCODE or NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS or NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
                     Bundle().apply {
@@ -70,6 +88,7 @@ public actual class Nfk(activity: Activity) {
                 )
                 cont.invokeOnCancellation {
                     println("disabling reader mode")
+                    isReading = false
                     nfcAdapter.disableReaderMode(requiredContext)
                     cont.resume(null)
                 }
@@ -78,6 +97,15 @@ public actual class Nfk(activity: Activity) {
         }
     }
 
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
+        enableForegroundDispatch()
+    }
+
+    override fun onPause(owner: LifecycleOwner) {
+        super.onPause(owner)
+        nfcAdapter.disableForegroundDispatch(requiredContext)
+    }
 
     /**
      * Configure NFC to deliver new tags using the given pending intent. Also gives us priority
@@ -93,14 +121,14 @@ public actual class Nfk(activity: Activity) {
     }
 
     public actual companion object {
-        private var instance: Nfk? = null
+        private var instance: NfcDetectorFactory? = null
 
-        public actual fun getInstance(): Nfk {
+        public actual fun getInstance(): NfcDetector {
             return instance ?: throw IllegalStateException("NFK has not been properly initialized")
         }
 
-        public fun init(activity: Activity): Nfk {
-            return Nfk(activity).also {
+        public fun init(activity: ComponentActivity): NfcDetectorFactory {
+            return NfcDetectorFactory(activity).also {
                 instance = it
             }
         }

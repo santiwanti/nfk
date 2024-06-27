@@ -2,22 +2,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import platform.CoreNFC.NFCNDEFMessage
-import platform.CoreNFC.NFCNDEFPayload
 import platform.CoreNFC.NFCNDEFReaderSession
-import platform.CoreNFC.NFCNDEFReaderSessionDelegateProtocol
 import platform.CoreNFC.NFCPollingISO14443
 import platform.CoreNFC.NFCPollingISO15693
 import platform.CoreNFC.NFCPollingISO18092
-import platform.CoreNFC.NFCReaderSessionInvalidationErrorFirstNDEFTagRead
 import platform.CoreNFC.NFCTagProtocol
 import platform.CoreNFC.NFCTagReaderSession
 import platform.CoreNFC.NFCTagReaderSessionDelegateProtocol
 import platform.Foundation.NSError
 import platform.darwin.NSObject
-import utils.toByteArray
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.experimental.and
 
 public actual class Nfk {
@@ -40,10 +33,10 @@ public actual class Nfk {
     /**
      * Attempts to read a single tag.
      *
-     * @param timeout milliseconds to wait before cancelling. If `null` it will wait indefinitely.
+     * @param cardTypesToDetect milliseconds to wait before cancelling. If `null` it will wait indefinitely.
      * @return the `NfcCard` that was read or `null`.
      */
-    public actual suspend fun read(timeout: Long?): NfcCard? = withContext(Dispatchers.IO) {
+    public actual suspend fun detect(cardTypesToDetect: Long?): NfcCard? = withContext(Dispatchers.IO) {
         suspendCancellableCoroutine { cont ->
             val tagSession = NFCTagReaderSession(
                 NFCPollingISO14443 and NFCPollingISO15693 and NFCPollingISO18092,
