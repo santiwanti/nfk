@@ -11,15 +11,15 @@ import platform.CoreNFC.NFCTagReaderSession
 import platform.CoreNFC.NFCTagReaderSessionDelegateProtocol
 import platform.Foundation.NSError
 import platform.darwin.NSObject
-import kotlin.experimental.and
+import kotlin.reflect.KClass
 
-public actual class Nfk {
+public actual class NfcDetectorFactory : NfcDetector {
 
     /**
      *
      * @return true if enabled, false otherwise
      */
-    public actual fun isEnabled(): Boolean {
+    public override fun isEnabled(): Boolean {
         return NFCNDEFReaderSession.readingAvailable()
     }
 
@@ -27,16 +27,13 @@ public actual class Nfk {
      * Does whatever can be done to enable NFC. After this function runs there is no guarantee that
      * NFC is enabled.
      */
-    public actual suspend fun enable() {
+    public override suspend fun enable() {
     }
 
-    /**
-     * Attempts to read a single tag.
-     *
-     * @param cardTypesToDetect milliseconds to wait before cancelling. If `null` it will wait indefinitely.
-     * @return the `NfcCard` that was read or `null`.
-     */
-    public actual suspend fun detect(cardTypesToDetect: Long?): NfcCard? = withContext(Dispatchers.IO) {
+    override suspend fun <T : NfcCard> detect(
+        cardTypesToDetect: List<KClass<T>>?,
+        timeout: Long?
+    ): NfcCard? = withContext(Dispatchers.IO) {
         suspendCancellableCoroutine { cont ->
             val tagSession = NFCTagReaderSession(
                 NFCPollingISO14443 and NFCPollingISO15693 and NFCPollingISO18092,
@@ -102,8 +99,8 @@ public actual class Nfk {
     }
 
     public actual companion object {
-        private val instance = Nfk()
-        public actual fun getInstance(): Nfk {
+        private val instance = NfcDetectorFactory()
+        public actual fun getInstance(): NfcDetector {
             return instance
         }
     }
